@@ -1,0 +1,488 @@
+%\VignetteIndexEntry{tsdisagg2manual}
+%\VignetteEngine{R.rsp::tex}
+%\VignetteKeyword{R}
+%\VignetteKeyword{package}
+%\VignetteKeyword{vignette}
+%\VignetteKeyword{LaTeX}
+%\VignetteCompression{gs(ebook)+qpdf}
+
+\documentclass[10pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{relsize}
+\usepackage{enumerate}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{marvosym}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{array}
+\graphicspath{ {C:/Users/Jorge/Desktop} }
+\usepackage[T1]{fontenc}
+\usepackage[pdftex]{hyperref}
+\usepackage{listings}
+\lstset{
+  language=R,
+  basicstyle=\footnotesize\ttfamily\color{gray!60!black},
+  commentstyle=\ttfamily\itshape\color{gray},
+  numbers=none,
+  stepnumber=1,
+  numbersep=10pt,
+  backgroundcolor=\color{white},
+  sensitive=false,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  frame=none,
+  tabsize=2,
+  captionpos=b,
+  breaklines=true,
+  breakatwhitespace=false,
+  title=\lstname,
+  escapeinside={},
+}
+%%%%%%%%%%%%%
+
+\newcommand{\y}{{\bf {y}}}
+\newcommand{\X}{{\bf {X}}}
+\newcommand{\Y}{{\bf {Y}}}
+\newcommand{\dotX}{{\bf \dot{X}}}
+\newcommand{\Lagr}{\mathcal{L}}
+
+
+
+%%%%%%%%%%%%%
+\begin{document}
+
+%Titulo
+\title{\bf The `tsdisagg2' Package}
+
+  %Autor
+  \author{Jorge Alexandre Moura Alves Vieira\\ {\footnotesize \texttt{jorgealexandrevieira@gmail.com}}}
+  \date{October, 2016}
+
+  \maketitle{}
+
+
+  \begin{abstract}
+  Time series disaggregation methods are used to disaggregate a low frequency time series to a higher frequency series with or without additional information contained in indicators. The `tsdisagg2'  is an R package, which implements the following disaggregation methods: Boot, Feibes and Lisman (both versions), Chow and Lin (both versions), Fern\'andez and Litterman. This project was inspired by the CARMAX  software, built in TSP by Santos Silva.
+  \end{abstract}
+
+  \section{Time series disaggregation}
+  The temporal disaggregation methods have evolved over the years. In 1962, Friedman suggested that it is possible to represent a time series as a linear process based on periodic observations \cite{friedman}. Later, several changes occurred to the Friedman approach. On this paper, only the following approaches will be considered: Boot, Feibes and Lisman \cite {boot} in 1967 considered approaches based on univariate linear regression models (without the aid of associated series); Chow and Lin \cite{chow} in 1971, Fern\'andez \cite{fer} in 1981 and Litterman \cite{lit} in 1983 considered approaches based on multivariate linear regression models (with the aid of associated series). \\
+
+  Let $\Y_\mathsmaller{(N \times 1)}$ be the vector of the observed $N$ annual values. Thus, using this methodology, it is intended to estimate $\y_ \mathsmaller{(n \times 1)}$, the $n$ periodic values, so that $\Y=C\y$ where $C$ is an aggregation matrix. This matrix is vital for the definition of the disaggregation techique to use: interpolation, distribution or extrapolation. The techinque depends on the type of variable that is available. Interpolation for stock variables and distribution for flow variables. It is noted that $n\geq sN$, wherein $s$ is the frequency of observations (if $s=4$, the observations are quarterly) . If $n>sN$, it is a case of extrapolation.\\
+
+  The flow variables may comply with one of the following restrictions:
+
+  \begin{itemize}
+  \item[--] the sum of sub-periodic values is equal to the value of respective period observation
+  \begin{equation} \label{sum2}
+  Y_\mathsmaller{i}=\sum\limits_{k=1}^s y_\mathsmaller{i, k},
+  \quad i=1, ..., N,\quad k=1, ..., s;
+  \end{equation}
+  \item[--] the value observed on each period is the average of sub-periods values
+  \begin{equation} \label{average2}
+  Y_\mathsmaller{i}=\frac{1}{s}\sum\limits_{k=1}^s y_\mathsmaller{i, k},
+  \quad i=1, ..., N,\quad k=1, ..., s.
+  \end{equation}
+  \end{itemize}
+
+  The stock variables may comply with one of the following restrictions:
+
+  \begin{itemize}
+  \item[--] the periodic total is equal to the value of the first sub-period
+  \begin{equation} \label{first2}
+  Y_\mathsmaller{i}=y_\mathsmaller{i, 1}
+  \quad i=1, ..., N;
+  \end{equation}
+  \item[--] the periodic total is equal to the value of the last sub-period
+  \begin{equation} \label{last2}
+  Y_\mathsmaller{i}=y_\mathsmaller{i, s},
+  \quad i=1, ..., N.
+  \end{equation}
+  \end{itemize}
+
+  Let $C_\mathsmaller{(N \times n)}$ be the aggregation matrix which converts sub-periodic observed values into periodic values, therefore:
+
+  \begin{equation*}
+  C=I_\mathsmaller{N} \otimes c,
+  \end{equation*}
+
+  {\raggedleft  where $\otimes$ is the Kronecker product and $c_\mathsmaller{(1 \times s)}$ is the aggregation vector.} For a flow variable (case of distribution) that complies to restriction \eqref{sum2}, the aggregation vector is given by $c=\begin{bmatrix} 1 & \dotsi & 1 \end{bmatrix}.$ If the variable complies to restriction \eqref{average2}, then $c=\begin{bmatrix} \frac {1}{s} & \dotsi & \frac {1}{s} \end{bmatrix}.$ For a stock variable (case of interpolation) that complies to restriction \eqref{first2}, $c=\begin{bmatrix}1&0&\dotsi&0 \end{bmatrix}.$ If the variable complies to \eqref{last2}, then $c=\begin{bmatrix} 0&\dotsi&0&1 \end{bmatrix}.$\\
+
+  It is possible to represent a time series as a linear process based on periodic observations, such as
+
+  \begin{equation} \label{high2}
+  \y=\X\beta+\epsilon,
+  \end{equation}
+
+  {\raggedleft where $\y_ {(n \times 1)}$ is the vector of values to be estimated, $\X_\mathsmaller {(n \times p)}$ is the matrix of observations of the available $p$ indicators, $\beta_ \mathsmaller{(p \times 1)}$ is the vector of coefficients and $\epsilon_ {(n \times 1)}$ is a residual variable with mean zero and variance-covariance matrix given by $\Sigma_\mathsmaller{(n \times n)}=\sigma^2\Omega$, where $\Omega_ \mathsmaller{(n \times n)}$ is the correlation matrix of $\epsilon$. The model \eqref{high2} is known as {\it high frequency model}.}\\
+
+  As a consequence of the condition $\Y=C\y$, the periodic variable, $\Y$, can be written as
+
+  \begin{equation} \label{low2}
+  \Y=\dotX \beta+\xi,
+  \end{equation}
+
+  {\raggedleft where $\dotX_\mathsmaller{(N \times p)}=C\X$ is the aggregated matrix of the available $p$ indicators, $\xi_\mathsmaller{(N \times 1)}=C\epsilon$ is a vector of random errors with variance-covariance matrix $\sigma_\epsilon^\mathsmaller{2}W$, with $W_\mathsmaller{(N \times N)}=C \Omega C^{\mathsmaller T}$.} The model \eqref{low2} is known as {\it low frequency model}. \\
+
+  The pioneers of time series disaggregation methodologies based on regression models were Chow and Lin (1971) \cite{chow} and since then, their methodology remains the most widely used. The developments made to their methodology focus on the autocorrelation pattern of errors generated by the model.
+
+  \subsection{Methods}
+  At an early stage of their research, Chow and Lin (1971) \cite{chow} found that residuals of the annual values are distributed evenly through the periodic observations, that is, they considered that residuals are stationary over time. In this case,
+
+  \begin{equation} \label{cl12}
+  \Omega = I_{\mathsmaller n},
+  \end{equation}
+
+  Later, Chow and Lin \cite{chow} suggested that the residuals follow an autoregressive process $AR(1)$, $\epsilon_{\mathsmaller t}=\rho \epsilon_{\mathsmaller {t-1}}+\delta_{\mathsmaller t}$, with $t=1, ..., n$, where $\delta_{\mathsmaller t}$ is a white noise process and $\left|\rho\right|<1$. Assuming that $\epsilon_{\mathsmaller 0}=0$,
+
+  \begin{equation}  \label{cl22}
+  \Omega=[(I_{\mathsmaller n}+ \rho L)^{\mathsmaller T} (I_{\mathsmaller n}+\rho L)]^{\mathsmaller {-1}},
+  \end{equation}
+
+  {\raggedleft where $L_{\mathsmaller {(n\times n)}}$ is the auxiliar matrix}
+
+  \begin{equation} \label{L2}
+  L=-1 {\times \begin{bmatrix} 0 & 0 & 0 & \dotsi & 0\\ 1 & 0 & 0 & \dotsi & 0 \\ 0 & 1 & 0 & \dotsi & 0 \\ \vdots & \vdots & \vdots & \ddots & \vdots \\ 0 & 0 & 0 & \dotsi & 0  \end{bmatrix} }.
+  \end{equation}
+
+  It should be noted that the last model requires the estimation of a new parameter, $\rho$.\\
+
+  Fern\'andez (1981) \cite{fer} suggested a new method, similar to the aforementioned, which simplified the process of disaggregation. However, this simplicity is achieved through a strong assumption: $\rho =1$. The author suggested that $\epsilon$ follows a {\it random walk} process, $\epsilon_{\mathsmaller t}=\epsilon_{\mathsmaller {t-1}}+\delta_{\mathsmaller t}$, with $t=1, ..., n$, where $\delta_{\mathsmaller t}$ is a white noise process. This option simplifies the problem because there is no need to estimate the autocorrelation parameter. In this case,
+  \begin{equation}  \label{fdz2}
+  \Omega=[D^{\mathsmaller T}D]^{\mathsmaller {-1}},
+  \end{equation}
+
+  {\raggedleft with}
+
+  \begin{equation} \label{D2}
+  D=I_{\mathsmaller n}+L,
+  \end{equation}
+
+  {\raggedleft where $L$ is the auxiliar matrix presented on \eqref{L2}.}\\
+
+  Litterman (1983) \cite{lit} suggested a different approach, stating that the residuals are distributed through a {\it random walk-Markov} process. Thus, for $t=1, ..., n$, $\epsilon_{\mathsmaller t}=\epsilon_{\mathsmaller {t-1}}+u_{\mathsmaller t}$, where $u_{\mathsmaller t}$ is an $AR(1)$ process, $u_{\mathsmaller t}=\rho u_\mathsmaller{t-1}+\delta_{\mathsmaller t}$, $\delta_{\mathsmaller t}$ is white noise and $\left|\rho\right|<1$. Assuming that $\epsilon_{\mathsmaller 0}=u_{\mathsmaller {0}}=0$, then
+
+  \begin{equation}  \label{lit2}
+  \Omega=[D^{\mathsmaller T} (I_{\mathsmaller n}+ \rho L)^{\mathsmaller T} (I_{\mathsmaller n}+\rho L) D]^{\mathsmaller {-1}},
+  \end{equation}
+
+  {\raggedleft where $L$ and $D$ are the matrixes presented on \eqref{L2} and \eqref{D2}, respectively.}\\
+
+  In general, it is preferred that the time series disaggregation is performed using the information contained in associated indicators. When indicators are not available, it is appropriate to use simpler methods such as those suggested by Boot, Feibes and Lisman (1967) \cite{boot}. These authors suggested two methods: the first differences and the second differences methods. In the first, the only covariate is a constant and $\rho =0$, so
+
+  \begin{equation} \label{bfl12}
+  \Omega=[D^{\mathsmaller T}D]^{\mathsmaller {-1}},
+  \end{equation}
+
+  {\raggedleft where $D$ is the matrix presented on \eqref{D2}.}\\
+  In the second method, which is a particular case of Litterman's method, the only covariates are a constant and the time trend and $\rho =1$, therefore
+
+  \begin{equation} \label{bfl22}
+  \Omega=[D^{\mathsmaller T} D^{\mathsmaller T}DD]^{\mathsmaller {-1}},
+  \end{equation}
+
+  {\raggedleft where $D$ is the matrix presented on \eqref{D2}.}\\
+
+  \subsection{Estimation}
+  For the estimation of the high frequency series, there is a need to estimate the parameters $\beta$, $\sigma_\epsilon^{\mathsmaller 2}$ and $\rho$ (when required). These parameters can not be estimated based on model \eqref{high2} because $\y$ is unknown. Thus, the estimation is performed based on model \eqref{low2}. The BLU estimators for $\beta$ and $\sigma_\epsilon^{\mathsmaller 2}$ \cite{aitken, fomby, plackett} are given by
+
+  \begin{equation} \label{beta2}
+  {\hat\beta}=\left[ {\bf \dot{X}}^{\mathsmaller T}W^{\mathsmaller {-1}} {\bf \dot{X}} \right]^{\mathsmaller {-1}} {\bf \dot{X}}^{\mathsmaller T}W^{\mathsmaller {-1}}{\bf Y}
+  \end{equation}
+
+  {\raggedleft and}
+
+  \begin{equation} \label{sigma2}
+  \hat\sigma_\epsilon^{\mathsmaller 2}=\left(N-p\right)^{\mathsmaller {-1}}\left[{\bf Y}-{\bf \dot{X}}\hat{\beta}\right]^{\mathsmaller T}W^{\mathsmaller {-1}}\left[{\bf Y}-{\bf \dot{X}}\hat{\beta}\right].
+  \end{equation}
+
+  To perform statistical inference on $\beta$, it is considered, for a large sample, that
+  ${\hat\beta} \sim NMV\left(E\left[{\hat\beta}\right], Var\left[{\hat\beta}\right]\right)$, where $E\left[{\hat\beta}\right]=\beta$ and $Var\left[{\hat\beta}\right]=\hat{\sigma}_\epsilon^{\mathsmaller 2}\left[{\bf \dot{X}}^{\mathsmaller T}W^{\mathsmaller {-1}}{\bf \dot{X}}\right]^{\mathsmaller {-1}}$. Considering those conditions, it is possible to test the null hypothesis, $H_\mathsmaller{0}: \beta = \beta^{*}$, through Wald z-test \cite{cameron,wald}, where the statistic, $\mathcal{Z}_\mathsmaller{w}$, is given by
+  \begin{equation} \label{betaet2}
+  \mathcal{Z}_\mathsmaller{w}=\frac{{\hat\beta}-\beta^{*}}{\sqrt{Var\left[{\hat\beta}\right]}} \sim NMV\left({\bf 0}, {\bf 1}\right).
+  \end{equation}
+  \vskip0.2in
+  The estimation of $\beta$ and ${\sigma}_\epsilon^{\mathsmaller 2}$ are based on the assumption that $W$ is known. However, frequently, this assumption is not verified. Thus, the previous estimation of $\rho$ is required. For the estimation of $\rho$, it can be performed a grid search for values within the interval $(-1, 1)$ with increments of 0.01. The optimal value is the one that maximizes the Objective Function (obtained from Concentrated Log-Likelihood function \cite{dubin})
+
+  \begin{equation} \label{of2}
+  \Psi(\rho|{\bf Y})=-i_{\mathsmaller \Psi} \log \left| \hat{W}(\rho) \right|-N \log \left\{ \left[{\bf Y}-{\bf \dot{X}}\hat{\beta}(\rho)\right]^{\mathsmaller T} \hat{W}^{\mathsmaller {-1}}(\rho)  \left[{\bf Y}-{\bf \dot{X}}\hat{\beta}(\rho)\right]\right\},
+  \end{equation}
+
+  {\raggedleft where}
+
+  $$i_{\mathsmaller \Psi}=\begin{cases}
+  1, & \mbox{for a Maximum Likelihood estimation}; \\
+  0, & \mbox{for a Generalized Least Squares estimation}.
+  \end{cases}$$
+
+\vskip0.2in
+Recapping, with ${\bf Y}$ and ${\bf X}$ available, the estimation of $ \beta $ and $ \rho $ is possible. Being in possession of $ \hat \beta $ and $ \hat \rho $, makes possible the estimation of $ \xi $, such that $ \hat \xi = {\bf Y} - {\bf \dot {X} } \hat \beta $. Consequently, the estimator $ \hat {\bf y} $ is obtained by correcting the naive estimate of $ {\bf y} $, the linear combination $ {\bf X} \hat \beta $, by distributing the residual low frequency estimates, $ \hat \xi $, through that same estimate. This distribution is performed through the matrix
+
+  \begin{equation*}
+  G=\Omega C^\mathsmaller{T}W^\mathsmaller{-1},
+  \end{equation*}
+
+  {\raggedleft known as {\it Gain Projection Matrix} \cite{goldberger}.} Thus, the estimator for ${\bf y}$ is given by
+
+  \begin{equation} \label{yhat2}
+  \begin{split}
+  \hat{{\bf y}}&={\bf X}\hat{\beta}+G\hat\xi \\
+  &={\bf X}\hat{\beta}+\Omega C^\mathsmaller{T}W^\mathsmaller{-1}\left[{\bf Y}-{\bf \dot{X}}\hat{\beta}\right].
+  \end{split}
+  \end{equation}
+
+  The structure of $\hat{{\bf y}}$ ensures the important property of consistency ${\bf Y}=C\hat{{\bf y}}$.
+
+
+  \section{About the `tsdisagg2' package}
+    The `tsdisagg2' package was built in R \cite{r} and was inspired by the CARMAX software, built in TSP, by Santos Silva. His software was originally built in 1996, as a project for INE-Portugal.\\
+
+    The `tsdisagg2' package has only one available function, the \texttt{tsdisagg2} function. This function implements the following time series disaggregation methods: Boot, Feibes and Lisman (both versions), Chow and Lin (both versions), Fern\'andez and Litterman.
+
+    \subsection{Arguments}
+    The role of each argument is described on Table \ref{arguments2}:
+
+    \setlength{\extrarowheight}{.3em}
+    \begin{table}[H]
+    \scriptsize
+    \centering
+    \caption{Arguments from `tsdisagg2' function.}
+  \vspace*{2mm}
+  \label{arguments2}
+  \begin{tabular}{rp{0.75\linewidth}}
+  \toprule
+  \multicolumn{1}{c}{\textbf{Arguments}} & \multicolumn{1}{c}{\textbf{Description}} \\
+  \midrule
+  \texttt{y} & A \textit{data.frame}, \textit{matrix}, \textit{list} or \textit{vector} object with low frequency data. \\
+  \texttt{x} & A \textit{data.frame}, \textit{matrix}, \textit{list} or \textit{vector} object with high frequency data. \\
+  \texttt{da} & First year considered on low frequency data. \\
+  \texttt{dz} & Last year considered on low frequency data. \\
+  \texttt{s} & Frequency of observations; 3, 4 or 12; Default: \texttt{s=4}. \\
+  \texttt{method} & Set disaggregation method; 0 or 1; \texttt{`bfl1'}, \texttt{`bfl2'}, \texttt{`cl1'}, \texttt{`cl2'}, \texttt{`f'} or \texttt{`l'}); Default: \texttt{method=`cl1'}\\
+  \texttt{c} & Model will be estimated with a constant; 0 or 1; Default: \texttt{c=0}.\\
+  \texttt{type} & Type of restriction; \texttt{`first'}, \texttt{`last'}, \texttt{`sum'} or \texttt{`average'}; Default: \texttt{type=`sum'}.\\
+  \texttt{rho} & Sets a value for $\rho$; Any value within the interval $(-1, 1)$; Default: \texttt{rho=0}.\\
+  \texttt{neg} & The grid search is performed for negative or positive values of $\rho$; 0 or 1; Default: \texttt{neg=0}.\\
+  \texttt{ML} & Maximum Likelihood or Generalized Least Squares $\rho$ estimation; 0 or 1; Default: \texttt{ML=0}.\\
+  \texttt{plots} & Generates the plot of the estimated series and the plot with the values from Objective Function; 0 or 1; Default: \texttt{plots=0}.\\
+  \bottomrule
+  \end{tabular}
+  \end{table}
+
+  The definition of the disaggregation method depends on the \texttt{method} argument. Possible options for this argument are listed on Table \ref{met2}.
+
+  \setlength{\extrarowheight}{.3em}
+  \begin{table}[H]
+  \scriptsize
+  \centering
+  \caption{Methods of disaggregation.}
+  \vspace*{2mm}
+  \label{met2}
+  \begin{tabular}{ccc}
+  \toprule
+  {\textbf{Method}} & {$\Omega$} & \texttt{method}  \\
+  \midrule
+  Chow e Lin                                &   \eqref{cl12}       & \texttt{`cl1'}  \\
+Chow e Lin                                &   \eqref{cl22}       & \texttt{`cl2'}   \\
+  Fern\'andez                               & \eqref{fdz2}        & \texttt{`f'}      \\
+Litterman                                  &  \eqref{lit2}       & \texttt{`l'}      \\
+  Boot, Feibes e Lisman              &    \eqref{bfl12}      & \texttt{`bfl1'}    \\
+Boot, Feibes e Lisman              &    \eqref{bfl22}       & \texttt{`bfl2'}      \\
+  \bottomrule
+  \end{tabular}
+  \end{table}
+
+
+  \subsection{A quick example}
+  The following example shows how to use \texttt{tsdisagg2} function. Consider the low frequency data shown on Table \ref{lf2}:
+
+  \setlength{\extrarowheight}{.1em}
+  \begin{table}[H]
+  \scriptsize
+  \centering
+  \caption{Low frequency series.}
+  \vspace*{2mm}
+  \label{lf2}
+  \begin{tabular}{cc}
+  \toprule
+  \multicolumn{1}{c}{\textbf{Period}} & \multicolumn{1}{c}{\textbf{Variable $Y$}} \\
+  \midrule
+  1995 & 203.92 \\
+  1996 & 118.86 \\
+  1997 & 139.82 \\
+  1998 & 216.44 \\
+  1999 & 291.03 \\
+  2000 & 435.35 \\
+  \bottomrule
+  \end{tabular}
+  \end{table}
+
+  Consider that are known two indicators, associated to the low frequency series, $X_\mathsmaller{1}$ and $X_\mathsmaller{2}$. The high frequency data is shown on Table \ref{hf2}:
+
+  \setlength{\extrarowheight}{.0em}
+  \begin{table}[H]
+  \scriptsize
+  \centering
+  \caption{High frequency series.}
+  \vspace*{2mm}
+  \label{hf2}
+  \begin{tabular}{ccc}
+  \toprule
+  \multicolumn{1}{c}{\textbf{Sub-period}} & \multicolumn{1}{c}{\textbf{Variable $X_\mathsmaller{1}$}} & \multicolumn{1}{c}{\textbf{Variable $X_\mathsmaller{2}$}} \\
+  \midrule
+  Mar-95 & 4778.96 & 58.65 \\
+  Jun-95 & 5495.70 & 56.50 \\
+  Sep-95 & 5145.27 & 45.16 \\
+  Dec-95 & 4902.02 & 43.61 \\
+  Mar-96 & 5883.39 & 34.30 \\
+  Jun-96 & 5841.93 & 21.66 \\
+  Sep-96 & 6201.72 & 32.07 \\
+  Dec-96 & 6249.94 & 30.83 \\
+  Mar-97 & 6413.88 & 16.46 \\
+  Jun-97 & 6382.15 & 26.81 \\
+  Sep-97 & 6723.71 & 43.86 \\
+  Dec-97 & 6885.18 & 62.69 \\
+  Mar-98 & 6928.36 & 59.60 \\
+  Jun-98 & 7350.60 & 63.92 \\
+  Sep-98 & 7844.95 & 54.86 \\
+  Dec-98 & 8681.39 & 38.07 \\
+  Mar-99 & 8857.55 & 70.07 \\
+  Jun-99 & 8520.86 & 70.06 \\
+  Sep-99 & 8328.24 & 64.12 \\
+  Dec-99 & 7750.11 & 86.78 \\
+  Mar-00 & 9154.53 & 100.85 \\
+  Jun-00 & 7662.17 & 123.35 \\
+  Sep-00 & 8045.06 & 115.17 \\
+  Dec-00 & 8250.93 & 95.98 \\
+  \bottomrule
+  \end{tabular}
+  \end{table}
+
+  Consider that $Y$ is a flow variable which complies to restriction \eqref{sum2}. It is intended to disaggregate the (tranformed) low frequency series using Chow and Lin's method (second version), resorting to the aid of those indicators. It is intended a Maximum Likelihood estimation for negative values of $\rho$. From high frequency series, it is possible to verify that observations were recorded with a quarterly frequency. In R, the disaggregation of $Y$ can be done by:\\
+
+  \begin{lstlisting}[language=R]
+  R> library(tsdisagg2)
+  R> annual=c( 203.92, 118.86, ..., 435.35 )
+  R> X1=c( 4778.96, 5495.70, ..., 8250.93 )
+  R> X2=c( 58.65, 56.50, 45.16, ..., 95.98 )
+  R> object <- tsdisagg2( y=annual, x=cbind( X1, X2 ), da=1995, dz=2000, method='cl2', ML=1, neg=1, plots=1 )
+  \end{lstlisting}
+
+  Consequently, the following outputs are generated:\\
+
+  \begin{itemize}[label={\checkmark}]
+  \item A title indicating the method of disaggregation (\texttt{METHOD}):
+    \begin{lstlisting}[language=R]
+  Chow and Lin (AR1 residuals)
+  \end{lstlisting}
+
+  \item The parameter estimates (\texttt{PARAMETERS ESTIMATION}) and the final series estimates:
+    \begin{lstlisting}[language=R]
+Maximum Likelihood 'rho' estimation:  -0.77
+(Loglik:  -29.28063 )
+
+Sigma GLS:  4.56602
+Sigma OLS:  6.843793
+
+(Smooth:  30.79795 )
+
+
+Model coefficients:
+        estimate standard error z-statistic       p-value
+X1 -0.0001829363   0.0002817168  -0.6493623  5.161042e-01
+X2  1.0230230188   0.0323632102  31.6106780 2.633642e-219
+
+
+Estimated values (Y-hat):
+ year period     y-hat
+ 1995      1  58.33331
+ 1995      2  57.07181
+ 1995      3  44.72631
+ 1995      4  43.78857
+ 1996      1  33.64482
+  ...     ...   ...
+ 2000      3 114.52033
+ 2000      4  96.65684
+  \end{lstlisting}
+  {\footnotesize
+    {\bf Note:} The \texttt{Loglik} label refers to the value of the Log-Likelihood function
+    \begin{equation*}
+    \ell(\beta, \sigma_\epsilon^{\mathsmaller 2}, \rho|{\bf Y}) = -\frac{N}{2} \log \left(2\pi \hat{\sigma}_\epsilon^{\mathsmaller 2} \right) -\frac{1}{2} \log \left|\hat{W} \right| -\frac{1}{2\hat{\sigma}_\epsilon^{\mathsmaller 2}}\left[{\bf Y}-{\bf \dot{X}}\hat{\beta}\right]^{\mathsmaller T}\hat{W}^{\mathsmaller{-1}}\left[{\bf Y}-{\bf \dot{X}}\hat{\beta}\right],
+    \end{equation*}
+    considering the optimal $\hat{\rho}$. Labels \texttt{Sigma OLS} and \texttt{Sigma GLS} are related to naive and robust estimates of ${\sigma}_\epsilon^{\mathsmaller 2}$ \eqref{sigma2}, respectively. The \texttt{Smooth} value is an indicator of the smoothing degree of the estimated series given by
+    \begin{equation*}
+   \hat{{\bf y}}^\mathsmaller{T} D^\mathsmaller{T}D^\mathsmaller{T}DD\hat{{\bf y}} n^\mathsmaller{-1}.
+    \end{equation*}
+    Lastly, in the \texttt{Model coefficients} table, are presented the $\beta$ estimates and related results from Wald z-test \eqref{betaet2}.
+  }
+  \vskip0.2in
+   \item For each $\rho$ tested, the respective Objective Function value (\texttt{OBJECTIVE FUNCTION}):
+  \begin{lstlisting}[language=R]
+  rho    value
+  0.09 -31.42703
+  ...     ...
+ -0.97 -31.19837
+ -0.98 -31.25062
+ -0.99 -31.30589
+  \end{lstlisting}
+
+  \item Objective Function and estimated series plots.
+  \begin{figure}[H]
+  \includegraphics[width=0.6\textwidth]{obj_fct}
+  \centering
+  \end{figure}
+  \begin{figure}[H]
+  \includegraphics[width=0.6\textwidth]{series}
+  \centering
+  \end{figure}
+  \end{itemize}
+
+  The aforementioned output is not interactable. Though, the interaction with generated results is still possible. As an example, to interact with the generated model residuals, it is advisable the following R code:
+  \begin{lstlisting}[language=R]
+  R> names( object )
+  R> object$RESIDUALS
+  \end{lstlisting}
+
+  \begin{thebibliography}{1}
+  \bibitem{aitken} Aitken, A. C. (1934). ``On least squares and linear combinations of observations'', \textit{Proceedings of the Royal Society of Edinburgh}, {\bf 55}, 42-48. URL \url{http://dx.doi.org/10.1017/S0370164600014346}
+
+  \bibitem{boot} Boot, J. C. G., Feibes, W., \& Lisman, J. H. C. (1967). ``Further methods of derivation of quarterly figures from annual data'', \textit{Applied Statistics}, {\bf 16}, 65-75. URL \url{http://dx.doi.org/10.2307/2985238}
+
+  \bibitem{cameron} Cameron, A. C. \& Trivedi, P. K. (2005). \textit{Microeconometrics: Methods and Applications}, Cambridge University Press.  URL \url{http://dx.doi.org/10.1017/CBO9780511811241}
+
+  \bibitem{chow} Chow, G. \& Lin, A. (1971). ``Best linear unbiased interpolation, distribution and extrapolation of time series by Related Series'', \textit{The Review of Economics and Statistics}, {\bf 53}, 372-375.  URL \url{http://dx.doi.org/10.2307/1928739}
+
+  \bibitem{denton} Denton, F.T. (1971). ``Adjustment of monthly or quarterly series to annual totals: An approach based on quadratic minimization'', \textit{Journal of the American Statistical Association}, {\bf 66}, 99-102. URL \url{http://dx.doi.org/10.1080/01621459.1971.10482227}
+
+  \bibitem{difonzo} Di Fonzo, T. (2003). ``Temporal disaggregation of economic time series: towards a dynamic extension'', {\it Working Papers and Studies - Theme 1}, European Commission (Eurostat) - General Statistics. URL \url{http://dx.doi.org/10.1007/BF02511587}
+
+  \bibitem{dubin} Dubin, R. A. (1988). ``Estimation of Regression Coefficients in the Presence of Spatially Autocorrelated Error Terms''. \textit{The Review of Economics and Statistics}, {\bf 70}(3), 466-474. URL \url{http://dx.doi.org/10.2307/1926785}
+
+  \bibitem{fer} Fern\'andez, R. B. (1981). ``A methodologic note on the estimation of time series'', \textit{The Review of Economics and Statistics}, {\bf 63}, 471-476. URL \url{http://dx.doi.org/10.2307/1924371}
+
+  \bibitem{fomby} Fomby, T. B., Hill, R. C., \& Johnson, S. R. (2012). {\it Advanced Econometric Methods}. Springer Science \& Business Media. URL \url{http://dx.doi.org/10.1007/978-1-4419-8746-4}
+
+  \bibitem{friedman} Friedman, M. (1962). ``The Interpolation of Time Series by Related Series'', \textit{Journal of American Statistical Association}, {\bf 57}, 729-757. URL \url{http://dx.doi.org/10.1080/01621459.1962.10500812}
+
+  \bibitem{goldberger} Goldberger, A. S. (1962). ``Best Linear Unbiased Prediction'', {\it Journal of the American Statistical Association}, {\bf 57}, 369-375. URL \url{http://dx.doi.org/10.1080/01621459.1962.10480665}
+
+  \bibitem{lit} Litterman, R. B. (1983). ``A random walk, Markov model for the distribution of time series'', \textit{Journal of Business \& Economics Statistics}, {\bf 1}, 169-173. URL \url{http://dx.doi.org/10.2307/1391858}
+
+  \bibitem{plackett} Plackett, R. L. (1950). ``Some Theorems in Least Squares'', \textit{Biometrika}, {\bf 37} (1-2), 149-157. URL \url{http://dx.doi.org/10.2307/2332158}
+
+ \bibitem{r} R Core Team (2015). {\it A Language and Environment for Statistical Computing}. R Foundation for Statistical Computing, Vienna, Austria. URL \url{https://www.R-project.org}
+
+  \bibitem{stromberg} Stromberg, K. R. (1981). \textit{An Introduction to Classical Real Analysis}. Wadsworth, Belmont, CA. URL \url{http://dx.doi.org/10.1090/chel/376}
+
+  \bibitem{wald} Wald, A. (1943). ``Test of Statistical Hypotheses Concerning Several Parameters when the Number of Observations Is Large'', \textit{Transactions of the American Mathematical Society}, {\bf 54}, 426-482. URL \url{http://dx.doi.org/10.1090/S0002-9947-1943-0012401-3}
+  \end{thebibliography}
+
+  \end{document}
